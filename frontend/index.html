@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DermaScan — AI Skin Condition Analyzer</title>
+  <meta name="description" content="Upload a photo of a skin concern and get an instant dual-AI analysis powered by a specialized CNN and Gemini 2.0 Flash." />
+  <meta name="theme-color" content="#050b18" />
+  <meta property="og:title" content="DermaScan — AI Skin Condition Analyzer" />
+  <meta property="og:description" content="Instant skin analysis powered by clinical AI + Gemini 2.0 Flash." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Particles background -->
+  <div id="particles" aria-hidden="true"></div>
+
+  <!-- ── Navbar ───────────────────────────────────────────────────── -->
+  <nav id="navbar">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">
+        <span class="logo-icon">🔬</span>
+        <span class="logo-text">Derm<span class="accent">Scan</span></span>
+      </a>
+      <div class="nav-links">
+        <a href="#scanner">Scan</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#history">History</a>
+      </div>
+      <div class="nav-badge">
+        <span class="gemini-dot"></span>Powered by Gemini
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Hero ─────────────────────────────────────────────────────── -->
+  <section id="hero">
+    <div class="hero-content">
+      <div class="hero-chip">
+        <span class="chip-dot"></span> Dual AI · CNN + Gemini 2.0 Flash
+      </div>
+      <h1 class="hero-title">
+        Your skin,<br/>
+        <span class="gradient-text">analyzed instantly.</span>
+      </h1>
+      <p class="hero-subtitle">
+        Upload a photo of a skin concern. Our specialized dermatology CNN classifies it across
+        7 conditions while Gemini delivers a personalized, plain-English report — in seconds.
+      </p>
+      <div class="hero-actions">
+        <a href="#scanner" class="btn btn-primary" id="hero-cta">Start Free Scan →</a>
+        <a href="#how-it-works" class="btn btn-ghost">See how it works</a>
+      </div>
+      <p class="hero-disclaimer">
+        ⚕️ For informational purposes only · Not a substitute for medical advice
+      </p>
+    </div>
+    <div class="hero-visual" aria-hidden="true">
+      <div class="hero-ring ring-1"></div>
+      <div class="hero-ring ring-2"></div>
+      <div class="hero-ring ring-3"></div>
+      <div class="hero-icon">🩺</div>
+    </div>
+  </section>
+
+  <!-- ── Scanner ───────────────────────────────────────────────────── -->
+  <section id="scanner">
+    <div class="section-header">
+      <h2>Skin Scanner</h2>
+      <p>Upload a clear, well-lit photo of the affected area for best results.</p>
+    </div>
+
+    <!-- Tab switcher -->
+    <div class="tab-bar" role="tablist">
+      <button class="tab active" id="tab-upload" role="tab" aria-selected="true" aria-controls="panel-upload">
+        📁 Upload Photo
+      </button>
+      <button class="tab" id="tab-camera" role="tab" aria-selected="false" aria-controls="panel-camera">
+        📷 Use Camera
+      </button>
+    </div>
+
+    <!-- Upload panel -->
+    <div id="panel-upload" class="tab-panel" role="tabpanel">
+      <div id="drop-zone" class="drop-zone" tabindex="0" aria-label="Click or drag an image here">
+        <div class="drop-zone-ring" id="drop-ring"></div>
+        <div class="drop-zone-inner">
+          <div class="drop-icon">🖼️</div>
+          <p class="drop-label">Drop your image here</p>
+          <p class="drop-sub">or <span class="link-text">click to browse</span></p>
+          <p class="drop-formats">JPG, PNG, WEBP · Max 10 MB</p>
+        </div>
+        <input type="file" id="file-input" accept="image/*" hidden aria-label="Upload skin image" />
+      </div>
+    </div>
+
+    <!-- Camera panel -->
+    <div id="panel-camera" class="tab-panel hidden" role="tabpanel">
+      <div class="camera-wrapper">
+        <video id="camera-video" autoplay playsinline muted></video>
+        <div class="camera-overlay-ring"></div>
+        <button id="snap-btn" class="btn btn-snap" aria-label="Take photo">📸 Capture</button>
+        <button id="camera-stop" class="btn btn-ghost btn-sm camera-stop-btn" aria-label="Stop camera">✕ Stop</button>
+      </div>
+      <canvas id="camera-canvas" hidden></canvas>
+    </div>
+
+    <!-- Image preview -->
+    <div id="preview-section" class="preview-section hidden">
+      <div class="preview-card">
+        <img id="preview-img" src="" alt="Uploaded skin image preview" />
+        <button id="change-btn" class="btn btn-ghost btn-sm preview-change" aria-label="Change image">↩ Change</button>
+      </div>
+    </div>
+
+    <!-- Analyze button -->
+    <div class="scan-actions">
+      <button id="analyze-btn" class="btn btn-analyze" disabled aria-label="Analyze skin image">
+        <span class="analyze-icon">⚡</span>
+        <span id="analyze-label">Analyze Skin</span>
+      </button>
+    </div>
+
+    <!-- Backend status notice -->
+    <div id="demo-notice" class="demo-notice hidden">
+      <span>🔔</span>
+      <span>Demo mode — backend not detected. Results shown are illustrative.</span>
+    </div>
+  </section>
+
+  <!-- ── Results ───────────────────────────────────────────────────── -->
+  <section id="results" class="hidden">
+    <div class="section-header">
+      <h2>Analysis Results</h2>
+      <p>Two AI systems working together to give you the full picture.</p>
+    </div>
+
+    <div class="results-grid">
+
+      <!-- CNN Panel -->
+      <div class="result-card cnn-card" id="cnn-panel">
+        <div class="card-header">
+          <div class="card-label cnn-label">
+            <span class="label-dot teal-dot"></span> CNN Classification
+          </div>
+          <div id="cnn-loader" class="card-loader">
+            <div class="skeleton skeleton-title"></div>
+            <div class="skeleton skeleton-bar"></div>
+            <div class="skeleton skeleton-bar short"></div>
+            <div class="skeleton skeleton-bar shorter"></div>
+          </div>
+        </div>
+        <div id="cnn-content" class="card-content hidden">
+          <div class="condition-header">
+            <div>
+              <p class="condition-label">Detected Condition</p>
+              <h3 id="cnn-condition" class="condition-name"></h3>
+              <p id="cnn-common" class="condition-common"></p>
+            </div>
+            <div id="severity-pill" class="severity-pill"></div>
+          </div>
+
+          <div id="cnn-description" class="condition-description"></div>
+
+          <div class="confidence-section">
+            <p class="section-label">Top Predictions</p>
+            <div id="confidence-bars" class="confidence-bars"></div>
+          </div>
+
+          <div id="seek-doctor-cta" class="seek-doctor hidden">
+            <span class="cta-icon">🏥</span>
+            <div>
+              <strong>See a dermatologist soon</strong>
+              <p>This condition warrants professional evaluation.</p>
+            </div>
+          </div>
+
+          <div id="demo-cnn-tag" class="demo-tag hidden">⚡ Demo prediction</div>
+        </div>
+      </div>
+
+      <!-- Gemini Panel -->
+      <div class="result-card gemini-card" id="gemini-panel">
+        <div class="card-header">
+          <div class="card-label gemini-label">
+            <span class="label-dot violet-dot"></span> Gemini AI Report
+          </div>
+          <div class="gemini-model-badge">gemini-2.0-flash ✦</div>
+        </div>
+        <div id="gemini-loader" class="card-loader">
+          <div class="skeleton skeleton-title"></div>
+          <div class="skeleton skeleton-text"></div>
+          <div class="skeleton skeleton-text short"></div>
+          <div class="skeleton skeleton-text"></div>
+          <div class="skeleton skeleton-text shorter"></div>
+        </div>
+        <div id="gemini-content" class="card-content hidden">
+
+          <div class="gemini-section">
+            <p class="gemini-section-title">📋 What we observe</p>
+            <p id="gemini-observations" class="gemini-text"></p>
+          </div>
+
+          <div class="gemini-section">
+            <p class="gemini-section-title">💬 Explanation</p>
+            <p id="gemini-explanation" class="gemini-text"></p>
+          </div>
+
+          <div id="urgency-banner" class="urgency-banner">
+            <span id="urgency-icon" class="urgency-icon"></span>
+            <div>
+              <strong id="urgency-label"></strong>
+              <p id="urgency-reason" class="urgency-reason"></p>
+            </div>
+          </div>
+
+          <div class="gemini-two-col">
+            <div class="gemini-section">
+              <p class="gemini-section-title">💡 Care tips</p>
+              <ul id="care-tips" class="gemini-list"></ul>
+            </div>
+            <div class="gemini-section">
+              <p class="gemini-section-title">❓ Ask your doctor</p>
+              <ul id="doctor-questions" class="gemini-list"></ul>
+            </div>
+          </div>
+
+          <div class="gemini-disclaimer">
+            <span>⚕️</span>
+            <p id="gemini-disclaimer-text"></p>
+          </div>
+
+          <div id="demo-gemini-tag" class="demo-tag hidden">⚡ Demo report</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="results-actions">
+      <button id="new-scan-btn" class="btn btn-primary">🔄 New Scan</button>
+    </div>
+  </section>
+
+  <!-- ── How it works ──────────────────────────────────────────────── -->
+  <section id="how-it-works">
+    <div class="section-header">
+      <h2>How DermaScan Works</h2>
+      <p>Two AI models, one seamless experience.</p>
+    </div>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-num">01</div>
+        <div class="step-icon">📸</div>
+        <h3>Capture</h3>
+        <p>Upload a photo or use your camera to capture the area of concern.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <div class="step-icon">🧠</div>
+        <h3>CNN Analysis</h3>
+        <p>Our EfficientNetB0 model, trained on 10,000+ clinical images, classifies the condition.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <div class="step-icon">✦</div>
+        <h3>Gemini Report</h3>
+        <p>Gemini 2.0 Flash analyzes the image and generates personalized care advice.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">04</div>
+        <div class="step-icon">📊</div>
+        <h3>Full Picture</h3>
+        <p>Get a structured result with severity, confidence, home tips, and doctor guidance.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Scan History ──────────────────────────────────────────────── -->
+  <section id="history" class="hidden">
+    <div class="section-header">
+      <h2>Scan History</h2>
+      <p>Your last 5 scans, stored locally in your browser.</p>
+      <button id="clear-history" class="btn btn-ghost btn-sm">Clear history</button>
+    </div>
+    <div id="history-grid" class="history-grid"></div>
+  </section>
+
+  <!-- ── Footer ────────────────────────────────────────────────────── -->
+  <footer id="footer">
+    <div class="footer-inner">
+      <div class="footer-logo">
+        <span class="logo-icon">🔬</span>
+        <span class="logo-text">Derm<span class="accent">Scan</span></span>
+      </div>
+      <p class="footer-disclaimer">
+        DermaScan is an experimental AI tool built for educational and research purposes.
+        It is <strong>not a medical device</strong> and does not provide medical diagnoses.
+        Always consult a qualified dermatologist or healthcare professional for any skin concerns.
+      </p>
+      <p class="footer-copy">© 2026 TheDOMinators · Built with EfficientNetB0 + Gemini 2.0 Flash · HAM10000 Dataset</p>
+    </div>
+  </footer>
+
+  <script src="main.js"></script>
+</body>
+</html>
