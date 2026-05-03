@@ -76,6 +76,10 @@ app.add_middleware(
 
 # ─── Routes ───────────────────────────────────────────────────────────────────
 
+@app.get("/", tags=["system"])
+def root():
+    return {"status": "DermaScan API running"}
+
 @app.get("/health", tags=["system"])
 async def health():
     return {
