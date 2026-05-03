@@ -1,47 +1,49 @@
 /* ============================================================
-   DermaScan — Frontend Logic
+   MyLesion — Frontend Logic
    Handles: drag-drop, camera, parallel API calls,
             results rendering, and scan history.
    ============================================================ */
 
-//const API = 'http://localhost:8000';
-const API_BASE = 'https://thedominators2026.onrender.com';
+// Auto-detect local vs production API
+const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
+  ? 'http://127.0.0.1:8000' 
+  : 'https://thedominators2026.onrender.com';
 
 let currentFile = null;
 let cameraStream = null;
 let backendOnline = false;
 
 // ── DOM refs ──────────────────────────────────────────────────
-const dropZone     = document.getElementById('drop-zone');
-const fileInput    = document.getElementById('file-input');
-const previewSec   = document.getElementById('preview-section');
-const previewImg   = document.getElementById('preview-img');
-const analyzeBtn   = document.getElementById('analyze-btn');
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+const previewSec = document.getElementById('preview-section');
+const previewImg = document.getElementById('preview-img');
+const analyzeBtn = document.getElementById('analyze-btn');
 const analyzeLabel = document.getElementById('analyze-label');
 const resultsSection = document.getElementById('results');
-const historySec   = document.getElementById('history');
-const demoNotice   = document.getElementById('demo-notice');
-const tabUpload    = document.getElementById('tab-upload');
-const tabCamera    = document.getElementById('tab-camera');
-const panelUpload  = document.getElementById('panel-upload');
-const panelCamera  = document.getElementById('panel-camera');
-const cameraVideo  = document.getElementById('camera-video');
+const historySec = document.getElementById('history');
+const demoNotice = document.getElementById('demo-notice');
+const tabUpload = document.getElementById('tab-upload');
+const tabCamera = document.getElementById('tab-camera');
+const panelUpload = document.getElementById('panel-upload');
+const panelCamera = document.getElementById('panel-camera');
+const cameraVideo = document.getElementById('camera-video');
 const cameraCanvas = document.getElementById('camera-canvas');
-const snapBtn      = document.getElementById('snap-btn');
-const cameraStop   = document.getElementById('camera-stop');
-const changeBtn    = document.getElementById('change-btn');
-const newScanBtn   = document.getElementById('new-scan-btn');
+const snapBtn = document.getElementById('snap-btn');
+const cameraStop = document.getElementById('camera-stop');
+const changeBtn = document.getElementById('change-btn');
+const newScanBtn = document.getElementById('new-scan-btn');
 const clearHistory = document.getElementById('clear-history');
 
 // Metadata inputs
-const inputAge      = document.getElementById('input-age');
-const inputGender   = document.getElementById('input-gender');
+const inputAge = document.getElementById('input-age');
+const inputGender = document.getElementById('input-gender');
 const inputSkinType = document.getElementById('input-skin-type');
-const inputLoc      = document.getElementById('input-localization');
+const inputLoc = document.getElementById('input-localization');
 const inputDuration = document.getElementById('input-duration');
-const inputItchy    = document.getElementById('input-itchy');
-const inputPainful  = document.getElementById('input-painful');
-const inputRaised   = document.getElementById('input-raised');
+const inputItchy = document.getElementById('input-itchy');
+const inputPainful = document.getElementById('input-painful');
+const inputRaised = document.getElementById('input-raised');
 
 // Round age to nearest 5
 inputAge.addEventListener('change', () => {
@@ -52,16 +54,16 @@ inputAge.addEventListener('change', () => {
 
 // Editor DOM
 let cropper = null;
-const editorModal   = document.getElementById('editor-modal');
-const editorImg     = document.getElementById('editor-img');
-const editorClose   = document.getElementById('editor-close');
-const editorCancel  = document.getElementById('editor-cancel');
-const editorApply   = document.getElementById('editor-apply');
+const editorModal = document.getElementById('editor-modal');
+const editorImg = document.getElementById('editor-img');
+const editorClose = document.getElementById('editor-close');
+const editorCancel = document.getElementById('editor-cancel');
+const editorApply = document.getElementById('editor-apply');
 const adjBrightness = document.getElementById('adj-brightness');
-const adjContrast   = document.getElementById('adj-contrast');
+const adjContrast = document.getElementById('adj-contrast');
 const adjSaturation = document.getElementById('adj-saturation');
-const btnRotate     = document.getElementById('btn-rotate');
-const btnResetAdj   = document.getElementById('btn-reset-adj');
+const btnRotate = document.getElementById('btn-rotate');
+const btnResetAdj = document.getElementById('btn-reset-adj');
 
 // ── Particles ────────────────────────────────────────────────
 (function spawnParticles() {
@@ -72,9 +74,9 @@ const btnResetAdj   = document.getElementById('btn-reset-adj');
     const size = 4 + Math.random() * 10;
     p.style.cssText = `
       width:${size}px; height:${size}px;
-      left:${Math.random()*100}%;
-      animation-duration:${12+Math.random()*20}s;
-      animation-delay:${Math.random()*-20}s;
+      left:${Math.random() * 100}%;
+      animation-duration:${12 + Math.random() * 20}s;
+      animation-delay:${Math.random() * -20}s;
     `;
     container.appendChild(p);
   }
@@ -169,7 +171,7 @@ function openEditor(file) {
   editorModal.classList.remove('hidden');
 
   if (cropper) cropper.destroy();
-  
+
   resetAdjustments();
 
   cropper = new Cropper(editorImg, {
@@ -238,13 +240,13 @@ editorApply.addEventListener('click', () => {
   const b = adjBrightness.value;
   const c = adjContrast.value;
   const s = adjSaturation.value;
-  
+
   // Create a temporary canvas to apply filters
   const tempCanvas = document.createElement('canvas');
   tempCanvas.width = canvas.width;
   tempCanvas.height = canvas.height;
   const tCtx = tempCanvas.getContext('2d');
-  
+
   tCtx.filter = `brightness(${b}%) contrast(${c}%) saturate(${s}%)`;
   tCtx.drawImage(canvas, 0, 0);
 
@@ -341,7 +343,7 @@ async function fetchGemini(cnnData = null) {
   try {
     const fd = new FormData();
     if (cnnData) fd.append('cnn_result', JSON.stringify(cnnData));
-    
+
     // Metadata for Gemini
     if (inputAge.value) fd.append('age', inputAge.value);
     if (inputGender.value) fd.append('gender', inputGender.value);
@@ -359,13 +361,13 @@ async function fetchGemini(cnnData = null) {
 
 // ── Loaders ──────────────────────────────────────────────────
 function showLoaders() {
-  ['cnn-loader','gemini-loader'].forEach(id => document.getElementById(id).classList.remove('hidden'));
-  ['cnn-content','gemini-content'].forEach(id => document.getElementById(id).classList.add('hidden'));
+  ['cnn-loader', 'gemini-loader'].forEach(id => document.getElementById(id).classList.remove('hidden'));
+  ['cnn-content', 'gemini-content'].forEach(id => document.getElementById(id).classList.add('hidden'));
 }
 
 // ── Render CNN ───────────────────────────────────────────────
 function renderCNN(data) {
-  const loader  = document.getElementById('cnn-loader');
+  const loader = document.getElementById('cnn-loader');
   const content = document.getElementById('cnn-content');
   loader.classList.add('hidden');
   content.classList.remove('hidden');
@@ -374,7 +376,7 @@ function renderCNN(data) {
   if (!data || data.error) data = DEMO_CNN;
 
   document.getElementById('cnn-condition').textContent = data.condition;
-  document.getElementById('cnn-common').textContent    = data.common_name;
+  document.getElementById('cnn-common').textContent = data.common_name;
   document.getElementById('cnn-description').textContent = data.description;
 
   // Severity pill
@@ -396,7 +398,7 @@ function renderCNN(data) {
         <span class="conf-pct">${pct}%</span>
       </div>
       <div class="conf-track">
-        <div class="conf-fill${i===0?' top':''}" data-pct="${pct}"></div>
+        <div class="conf-fill${i === 0 ? ' top' : ''}" data-pct="${pct}"></div>
       </div>`;
     barsEl.appendChild(div);
   });
@@ -417,7 +419,7 @@ function renderCNN(data) {
 
 // ── Render Gemini ─────────────────────────────────────────────
 function renderGemini(data) {
-  const loader  = document.getElementById('gemini-loader');
+  const loader = document.getElementById('gemini-loader');
   const content = document.getElementById('gemini-content');
   loader.classList.add('hidden');
   content.classList.remove('hidden');
@@ -425,19 +427,19 @@ function renderGemini(data) {
   if (!data || data.error || data.parse_error) data = DEMO_GEMINI;
 
   document.getElementById('gemini-observations').textContent = data.visual_observations || '';
-  document.getElementById('gemini-explanation').textContent  = data.explanation || '';
+  document.getElementById('gemini-explanation').textContent = data.explanation || '';
   document.getElementById('gemini-disclaimer-text').textContent = data.disclaimer || '';
 
   // Urgency banner
   const urgencyMap = {
-    monitor:   { cls: 'u-monitor',   icon: '👁️', label: data.urgency_label || 'Monitor' },
-    schedule:  { cls: 'u-schedule',  icon: '📅', label: data.urgency_label || 'Schedule a visit' },
+    monitor: { cls: 'u-monitor', icon: '👁️', label: data.urgency_label || 'Monitor' },
+    schedule: { cls: 'u-schedule', icon: '📅', label: data.urgency_label || 'Schedule a visit' },
     seek_care: { cls: 'u-seek_care', icon: '🚨', label: data.urgency_label || 'Seek care soon' },
   };
   const urg = urgencyMap[data.urgency] || urgencyMap.monitor;
   const banner = document.getElementById('urgency-banner');
   banner.className = `urgency-banner ${urg.cls}`;
-  document.getElementById('urgency-icon').textContent  = urg.icon;
+  document.getElementById('urgency-icon').textContent = urg.icon;
   document.getElementById('urgency-label').textContent = urg.label;
   document.getElementById('urgency-reason').textContent = data.urgency_reason || '';
 
@@ -463,16 +465,18 @@ function saveToHistory(file, cnnData) {
   const reader = new FileReader();
   reader.onload = e => {
     const history = getHistory();
-    history.unshift({ img: e.target.result, condition: cnnData?.condition || 'Unknown',
-      severity: cnnData?.severity || 'low', ts: Date.now() });
+    history.unshift({
+      img: e.target.result, condition: cnnData?.condition || 'Unknown',
+      severity: cnnData?.severity || 'low', ts: Date.now()
+    });
     if (history.length > 5) history.pop();
-    localStorage.setItem('dermascan_history', JSON.stringify(history));
+    localStorage.setItem('mylesion_history', JSON.stringify(history));
   };
   reader.readAsDataURL(file);
 }
 
 function getHistory() {
-  try { return JSON.parse(localStorage.getItem('dermascan_history')) || []; }
+  try { return JSON.parse(localStorage.getItem('mylesion_history')) || []; }
   catch { return []; }
 }
 
@@ -496,7 +500,7 @@ function renderHistory() {
 }
 
 clearHistory.addEventListener('click', () => {
-  localStorage.removeItem('dermascan_history');
+  localStorage.removeItem('mylesion_history');
   document.getElementById('history-grid').innerHTML = '';
   historySec.classList.add('hidden');
 });
@@ -509,9 +513,9 @@ const DEMO_CNN = {
   description: 'Eczema is a condition that makes your skin red and itchy. It is extremely common and often chronic, requiring consistent moisturizing and management.',
   color: 'amber',
   top3: [
-    { code: 'Eczema',    label: 'Eczema',    probability: 0.8924 },
+    { code: 'Eczema', label: 'Eczema', probability: 0.8924 },
     { code: 'Psoriasis', label: 'Psoriasis', probability: 0.0612 },
-    { code: 'Tinea',     label: 'Tinea',     probability: 0.0214 },
+    { code: 'Tinea', label: 'Tinea', probability: 0.0214 },
   ],
   _demo: true
 };

@@ -5,7 +5,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("test_model")
 
-model_path = os.path.join("backend", "model", "dermascan.keras")
+model_path = os.path.join("backend", "model", "mylesion.keras")
 if os.path.exists(model_path):
     try:
         model = tf.keras.models.load_model(model_path)

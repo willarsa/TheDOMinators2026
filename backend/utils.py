@@ -1,4 +1,4 @@
-"""DermaScan — Image preprocessing utilities and condition metadata."""
+"""MyLesion — Image preprocessing utilities and condition metadata."""
 
 import io
 import numpy as np

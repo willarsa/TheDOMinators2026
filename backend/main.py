@@ -1,5 +1,5 @@
 """
-DermaScan — FastAPI Backend
+MyLesion — FastAPI Backend
 ===========================
 Endpoints:
   GET  /health           Health check
@@ -10,7 +10,6 @@ Endpoints:
 import json
 import logging
 import os
-import threading
 from contextlib import asynccontextmanager
 
 import numpy as np
@@ -18,16 +17,13 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
-try:
-    from backend.utils import build_gemini_prompt, postprocess_prediction, preprocess_image
-except ModuleNotFoundError:
-    from utils import build_gemini_prompt, postprocess_prediction, preprocess_image
+from backend.utils import build_gemini_prompt, postprocess_prediction, preprocess_image
 
 env_path = os.path.join(os.path.dirname(__file__), ".env")
 load_dotenv(dotenv_path=env_path, override=True)
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s  %(message)s")
-logger = logging.getLogger("dermascan")
+logger = logging.getLogger("mylesion")
 
 # ─── Global model handle ──────────────────────────────────────────────────────
 _model = None
@@ -35,31 +31,27 @@ _model = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Load the Keras model in a background thread at startup to avoid blocking."""
-    def load_model_task():
-        global _model
-        model_path = os.path.join(os.path.dirname(__file__), "model", "dermascan.keras")
-        if os.path.exists(model_path):
-            try:
-                import tensorflow as tf
-                _model = tf.keras.models.load_model(model_path)
-                logger.info(f"✅  Model loaded from {model_path}")
-            except Exception as exc:
-                logger.warning(f"⚠️  Model load failed: {exc}")
-        else:
-            logger.warning(
-                f"⚠️  No model at '{model_path}'. "
-                "Run colab/DermaScan_Training.ipynb and copy dermascan.keras here."
-            )
-            
-    # Start thread so it doesn't block FastAPI startup / Render port binding
-    threading.Thread(target=load_model_task, daemon=True).start()
+    """Load the Keras model once at startup."""
+    global _model
+    model_path = os.path.join(os.path.dirname(__file__), "model", "dermmylesionas")
+    if os.path.exists(model_path):
+        try:
+            import tensorflow as tf
+            _model = tf.keras.models.load_model(model_path)
+            logger.info(f"✅  Model loaded from {model_path}")
+        except Exception as exc:
+            logger.warning(f"⚠️  Model load failed: {exc}")
+    else:
+        logger.warning(
+            f"⚠️  No model at '{model_path}'. "
+                "Run colab/MyLesion_Training.ipynb and copy mylesion.keras here."
+        )
     yield
 
 
 # ─── App setup ────────────────────────────────────────────────────────────────
 app = FastAPI(
-    title="DermaScan API",
+    title="MyLesion API",
     description="AI-powered skin condition analysis (CNN + Gemini 2.0 Flash)",
     version="1.0.0",
     lifespan=lifespan,
@@ -75,10 +67,6 @@ app.add_middleware(
 
 
 # ─── Routes ───────────────────────────────────────────────────────────────────
-
-@app.get("/", tags=["system"])
-def root():
-    return {"status": "DermaScan API running"}
 
 @app.get("/health", tags=["system"])
 async def health():
