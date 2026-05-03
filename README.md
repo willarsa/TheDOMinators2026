@@ -69,11 +69,11 @@ uvicorn backend.main:app --reload
 
 ### Step 4 — Open the Frontend
 
-Simply open `frontend/index.html` in your browser — no build step needed.
+Simply open `docs/index.html` in your browser — no build step needed.
 
 > **Tip:** For camera capture to work, serve via a local server:
 > ```bash
-> cd frontend && python -m http.server 3000
+> cd docs && python -m http.server 3000
 > # Then open http://localhost:3000
 > ```
 
@@ -83,7 +83,7 @@ Simply open `frontend/index.html` in your browser — no build step needed.
 
 ```
 TheDOMinators2026/
-├── frontend/
+├── docs/
 │   ├── index.html          ← Single-page app
 │   ├── style.css           ← Dark-mode premium UI
 │   └── main.js             ← Drag-drop, camera, API calls, results
