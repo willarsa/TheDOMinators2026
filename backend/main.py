@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.utils import build_gemini_prompt, postprocess_prediction, preprocess_image
+from utils import build_gemini_prompt, postprocess_prediction, preprocess_image
 
 env_path = os.path.join(os.path.dirname(__file__), ".env")
 load_dotenv(dotenv_path=env_path, override=True)
