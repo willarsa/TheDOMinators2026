@@ -215,47 +215,20 @@ def postprocess_prediction(raw_probs: np.ndarray, top_n: int = 3) -> dict:
 
 # ─── Gemini Prompt Builder ────────────────────────────────────────────────────
 
-def build_gemini_prompt(cnn_data: dict, metadata: dict = None) -> str:
-    """Build a structured prompt for Gemini analysis with SCIN-aligned clinical context."""
-    if metadata is None:
-        metadata = {}
-
-    patient_context = ""
-    context_parts = []
-    
-    # Demographics
-    if metadata.get("age"): context_parts.append(f"Age: {metadata['age']}")
-    if metadata.get("gender"): context_parts.append(f"Sex: {metadata['gender']}")
-    if metadata.get("skin_type"): context_parts.append(f"Fitzpatrick Skin Type: {metadata['skin_type']}")
-    
-    # Clinical history
-    if metadata.get("localization"): context_parts.append(f"Location: {metadata['localization']}")
-    if metadata.get("duration"): context_parts.append(f"Duration: {metadata['duration']}")
-    
-    # Symptoms / Texture
-    symptoms = []
-    if metadata.get("is_itchy") == "true": symptoms.append("itchy")
-    if metadata.get("is_painful") == "true": symptoms.append("painful")
-    if metadata.get("is_raised") == "true": symptoms.append("raised/bumpy")
-    
-    if symptoms:
-        context_parts.append(f"Symptoms/Texture: {', '.join(symptoms)}")
-
-    if context_parts:
-        patient_context = "\n\nPatient Clinical Context: " + ", ".join(context_parts)
-
+def build_gemini_prompt(cnn_data: dict) -> str:
+    """Build a structured prompt for Gemini analysis."""
     cnn_hint = ""
     if cnn_data.get("condition"):
         prob_pct = round(cnn_data.get("confidence", 0) * 100)
         cnn_hint = (
-            f"\n\nContext: Our specialized dermatology CNN (MobileNetV2 trained on SCIN) classified this as "
+            f"\n\nContext: The MyLesion AI classified this as "
             f"'{cnn_data['condition']}' with {prob_pct}% confidence. "
             f"The underlying model prediction code is '{cnn_data.get('code', 'unknown')}'. "
             f"The severity is considered '{cnn_data.get('severity_label', 'Unknown')}'. "
             f"Clinical reference: {cnn_data.get('description', '')}"
         )
 
-    return f"""You are an expert dermatology AI assistant. Provide a patient-friendly explanation based ONLY on the CNN diagnosis and patient context provided below. Respond with ONLY a valid JSON object — no markdown, no preamble, no trailing text.{patient_context}{cnn_hint}
+    return f"""You are an expert dermatology AI assistant. Provide a patient-friendly explanation based ONLY on the AI diagnosis provided below. Respond with ONLY a valid JSON object — no markdown, no preamble, no trailing text.{cnn_hint}
 
 Return exactly this JSON structure:
 {{

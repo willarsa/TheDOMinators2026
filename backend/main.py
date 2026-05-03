@@ -31,31 +31,42 @@ _model = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Load the Keras model once at startup."""
+    """Load the Keras model in the background to avoid blocking startup."""
     global _model
     model_path = os.path.join(os.path.dirname(__file__), "model", "mylesion.keras")
-    if os.path.exists(model_path):
-        try:
-            import tensorflow as tf
-            _model = tf.keras.models.load_model(model_path)
-            logger.info(f"✅  Model loaded from {model_path}")
-        except Exception as exc:
-            logger.warning(f"⚠️  Model load failed: {exc}")
-    else:
-        logger.warning(
-            f"⚠️  No model at '{model_path}'. "
-                "Run colab/MyLesion_Training.ipynb and copy mylesion.keras here."
-        )
+
+    def load_model_task():
+        global _model
+        if os.path.exists(model_path):
+            try:
+                import tensorflow as tf
+                # Set logging to minimum to reduce spam during startup
+                os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+                _model = tf.keras.models.load_model(model_path)
+                logger.info(f"✅ Model loaded from {model_path}")
+            except Exception as exc:
+                logger.error(f"❌ Model load failed: {exc}")
+        else:
+            logger.warning(f"⚠️ No model at '{model_path}'. Running in DEMO mode.")
+
+    # Start loading in a background thread so we can bind to the port immediately
+    import threading
+    threading.Thread(target=load_model_task, daemon=True).start()
+    
     yield
 
 
 # ─── App setup ────────────────────────────────────────────────────────────────
 app = FastAPI(
     title="MyLesion API",
-    description="AI-powered skin condition analysis (CNN + Gemini 2.0 Flash)",
+    description="MyLesion — AI-powered skin condition analysis",
     version="1.0.0",
     lifespan=lifespan,
 )
+
+@app.get("/", tags=["system"])
+def root():
+    return {"status": "MyLesion API running", "docs": "/docs"}
 
 app.add_middleware(
     CORSMiddleware,
@@ -99,14 +110,6 @@ async def predict(file: UploadFile = File(...)):
 @app.post("/gemini-analyze", tags=["gemini"])
 async def gemini_analyze(
     cnn_result: str = Form(default=""),
-    age: str = Form(default=""),
-    gender: str = Form(default=""),
-    skin_type: str = Form(default=""),
-    localization: str = Form(default=""),
-    duration: str = Form(default=""),
-    is_itchy: str = Form(default="false"),
-    is_painful: str = Form(default="false"),
-    is_raised: str = Form(default="false"),
 ):
     """
     Send the CNN results to Gemini 2.0 Flash for a rich, natural-language
@@ -117,17 +120,6 @@ async def gemini_analyze(
         logger.warning("GOOGLE_API_KEY not set — returning demo Gemini report.")
         return _demo_gemini()
     
-    metadata = {
-        "age": age,
-        "gender": gender,
-        "skin_type": skin_type,
-        "localization": localization,
-        "duration": duration,
-        "is_itchy": is_itchy,
-        "is_painful": is_painful,
-        "is_raised": is_raised,
-    }
-
     cnn_data: dict = {}
     if cnn_result:
         try:
@@ -135,7 +127,7 @@ async def gemini_analyze(
         except json.JSONDecodeError:
             pass
 
-    prompt = build_gemini_prompt(cnn_data, metadata=metadata)
+    prompt = build_gemini_prompt(cnn_data)
 
     try:
         from google import genai
