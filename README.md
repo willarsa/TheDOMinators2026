@@ -2,10 +2,10 @@
 
 > A hackathon project by **TheDOMinators**
 
-MyLesion gives users an instant dual-AI skin analysis: a specialized **EfficientNetB0 CNN** trained on 10,000+ clinical images classifies the condition, while **Gemini 2.0 Flash** delivers a personalized, plain-English dermatology report — together in seconds.
+MyLesion gives users an instant dual-AI skin analysis: a specialized **EfficientNetB0 CNN** trained on 46,000+ balanced clinical images classifies the condition, while **Gemini 3.1 Flash Lite Preview** delivers a personalized, plain-English dermatology report — together in seconds.
 
-![MyLesion Demo](https://img.shields.io/badge/AI-EfficientNetB0%20%2B%20Gemini%202.0%20Flash-teal)
-![Dataset](https://img.shields.io/badge/Dataset-HAM10000%2010K%2B%20images-blue)
+![MyLesion Demo](https://img.shields.io/badge/AI-EfficientNetB0%20%2B%20Gemini%203.1%20Flash%20Lite-teal)
+![Dataset](https://img.shields.io/badge/Dataset-SCIN%20%26%20HAM10000%2046K%2B%20images-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 ---
@@ -13,8 +13,8 @@ MyLesion gives users an instant dual-AI skin analysis: a specialized **Efficient
 ## ✨ Features
 
 - 🖼️ **Drag-and-drop or camera capture** — works on mobile too
-- 🧠 **EfficientNetB0 CNN** — 7-class skin condition classification (HAM10000)
-- ✦ **Gemini 2.0 Flash** — multimodal image analysis, care tips, doctor questions
+- 🧠 **EfficientNetB0 CNN** — 7-class skin condition classification (SCIN & HAM10000)
+- ✦ **Gemini 3.1 Flash Lite Preview** — multimodal image analysis, care tips, doctor questions
 - ⚡ **Parallel analysis** — both AIs run simultaneously
 - 📊 **Top-3 confidence bars** — animated, color-coded results
 - 📱 **Fully responsive** — mobile-first design
@@ -107,7 +107,7 @@ TheDOMinators2026/
 |---|---|---|
 | `GET` | `/health` | Server + model status |
 | `POST` | `/predict` | CNN skin classification |
-| `POST` | `/gemini-analyze` | Gemini 2.0 Flash report |
+| `POST` | `/gemini-analyze` | Gemini 3.1 Flash Lite report |
 
 Full interactive docs at `http://localhost:8000/docs`
 
@@ -124,8 +124,8 @@ MyLesion is an **experimental AI tool** built for educational and research purpo
 | Layer | Technology |
 |---|---|
 | ML Model | TensorFlow / Keras, EfficientNetB0 |
-| Dataset | HAM10000 (ISIC Archive, Kaggle) |
-| AI Report | Google Gemini 2.0 Flash (`google-genai`) |
+| Dataset | SCIN (Skin Condition Image Network) & HAM10000 |
+| AI Report | Google Gemini 3.1 Flash Lite Preview (`google-genai`) |
 | Backend | FastAPI + Uvicorn |
 | Frontend | Vanilla HTML / CSS / JS |
 | Training | Google Colab (T4 GPU) |
