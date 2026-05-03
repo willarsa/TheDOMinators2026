@@ -10,6 +10,7 @@
   <meta property="og:description" content="Instant skin analysis powered by clinical AI + Gemini 2.0 Flash." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -112,6 +113,47 @@
       <div class="preview-card">
         <img id="preview-img" src="" alt="Uploaded skin image preview" />
         <button id="change-btn" class="btn btn-ghost btn-sm preview-change" aria-label="Change image">↩ Change</button>
+      </div>
+    </div>
+
+    <!-- Patient Details -->
+    <div id="patient-details" class="patient-details">
+      <p class="details-title">Optional: Add context for a better report</p>
+      <div class="details-grid">
+        <div class="input-group">
+          <label for="input-age">Patient Age</label>
+          <input type="number" id="input-age" step="5" min="0" max="85" placeholder="0-85" />
+        </div>
+        <div class="input-group">
+          <label for="input-gender">Sex</label>
+          <select id="input-gender">
+            <option value="">Select Sex</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="unknown">Unknown / Other</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label for="input-localization">Localization</label>
+          <select id="input-localization">
+            <option value="">Select Body Site</option>
+            <option value="abdomen">Abdomen</option>
+            <option value="back">Back</option>
+            <option value="chest">Chest</option>
+            <option value="ear">Ear</option>
+            <option value="face">Face</option>
+            <option value="foot">Foot</option>
+            <option value="genital">Genital</option>
+            <option value="hand">Hand</option>
+            <option value="lower extremity">Lower Extremity</option>
+            <option value="neck">Neck</option>
+            <option value="scalp">Scalp</option>
+            <option value="trunk">Trunk</option>
+            <option value="upper extremity">Upper Extremity</option>
+            <option value="acral">Acral</option>
+            <option value="unknown">Unknown</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -302,6 +344,47 @@
     </div>
   </footer>
 
+  <!-- ── Image Editor Modal ────────────────────────────────────── -->
+  <div id="editor-modal" class="modal hidden">
+    <div class="modal-content editor-content">
+      <div class="modal-header">
+        <h3>Prepare Image</h3>
+        <button class="btn-close" id="editor-close">✕</button>
+      </div>
+      <div class="editor-body">
+        <div class="cropper-container">
+          <img id="editor-img" src="" alt="Image to crop" />
+        </div>
+        <div class="editor-controls">
+          <p class="control-hint">Adjust exposure to match professional dermoscopy</p>
+          
+          <div class="control-group">
+            <label>Brightness</label>
+            <input type="range" id="adj-brightness" min="0" max="200" value="100" />
+          </div>
+          <div class="control-group">
+            <label>Contrast</label>
+            <input type="range" id="adj-contrast" min="0" max="200" value="100" />
+          </div>
+          <div class="control-group">
+            <label>Saturation</label>
+            <input type="range" id="adj-saturation" min="0" max="200" value="100" />
+          </div>
+
+          <div class="editor-actions-secondary">
+            <button id="btn-rotate" class="btn btn-ghost btn-sm" title="Rotate 90°">🔄 Rotate</button>
+            <button id="btn-reset-adj" class="btn btn-ghost btn-sm">🧹 Reset All</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="editor-cancel" class="btn btn-ghost">Cancel</button>
+        <button id="editor-apply" class="btn btn-primary">Apply & Save →</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
   <script src="main.js"></script>
 </body>
 </html>

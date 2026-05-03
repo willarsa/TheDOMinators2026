@@ -6,7 +6,7 @@ from PIL import Image
 
 # ─── Constants ────────────────────────────────────────────────────────────────
 
-IMG_SIZE = (224, 224)
+IMG_SIZE = (100, 75)  # Width, Height (matches training [75, 100])
 
 # HAM10000 classes sorted alphabetically (matches label encoder order after fit)
 CLASS_NAMES = ["akiec", "bcc", "bkl", "df", "mel", "nv", "vasc"]
@@ -119,8 +119,8 @@ def preprocess_image(file_bytes: bytes) -> np.ndarray:
     img = Image.open(io.BytesIO(file_bytes)).convert("RGB")
     img = img.resize(IMG_SIZE, Image.LANCZOS)
     arr = np.array(img, dtype=np.float32)
-    arr = (arr / 127.5) - 1.0  # Scale to [-1, 1]
-    return np.expand_dims(arr, axis=0)  # (1, 224, 224, 3)
+    arr = arr / 255.0  # Standard [0, 1] scaling
+    return np.expand_dims(arr, axis=0)  # (1, 75, 100, 3)
 
 
 # ─── Postprocessing ───────────────────────────────────────────────────────────
@@ -167,8 +167,16 @@ def postprocess_prediction(raw_probs: np.ndarray, top_n: int = 3) -> dict:
 
 # ─── Gemini Prompt Builder ────────────────────────────────────────────────────
 
-def build_gemini_prompt(cnn_data: dict) -> str:
-    """Build a structured prompt for Gemini analysis without an image."""
+def build_gemini_prompt(cnn_data: dict, age: str = "", gender: str = "", localization: str = "") -> str:
+    """Build a structured prompt for Gemini analysis with patient context."""
+    patient_context = ""
+    if age or gender or localization:
+        parts = []
+        if age: parts.append(f"Age: {age}")
+        if gender: parts.append(f"Sex: {gender}")
+        if localization: parts.append(f"Location: {localization}")
+        patient_context = f"\n\nPatient Details: {', '.join(parts)}"
+
     cnn_hint = ""
     if cnn_data.get("condition"):
         prob_pct = round(cnn_data.get("confidence", 0) * 100)
@@ -180,7 +188,7 @@ def build_gemini_prompt(cnn_data: dict) -> str:
             f"Model description: {cnn_data.get('description', '')}"
         )
 
-    return f"""You are an expert dermatology AI assistant. Provide a patient-friendly explanation based ONLY on the CNN diagnosis context provided below. Respond with ONLY a valid JSON object — no markdown, no preamble, no trailing text.{cnn_hint}
+    return f"""You are an expert dermatology AI assistant. Provide a patient-friendly explanation based ONLY on the CNN diagnosis and patient context provided below. Respond with ONLY a valid JSON object — no markdown, no preamble, no trailing text.{patient_context}{cnn_hint}
 
 Return exactly this JSON structure:
 {{

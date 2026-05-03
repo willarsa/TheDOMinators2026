@@ -17,9 +17,10 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
-from utils import build_gemini_prompt, postprocess_prediction, preprocess_image
+from backend.utils import build_gemini_prompt, postprocess_prediction, preprocess_image
 
-load_dotenv()
+env_path = os.path.join(os.path.dirname(__file__), ".env")
+load_dotenv(dotenv_path=env_path, override=True)
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s  %(message)s")
 logger = logging.getLogger("dermascan")
@@ -98,6 +99,9 @@ async def predict(file: UploadFile = File(...)):
 @app.post("/gemini-analyze", tags=["gemini"])
 async def gemini_analyze(
     cnn_result: str = Form(default=""),
+    age: str = Form(default=""),
+    gender: str = Form(default=""),
+    localization: str = Form(default=""),
 ):
     """
     Send the CNN results to Gemini 2.0 Flash for a rich, natural-language
@@ -107,6 +111,8 @@ async def gemini_analyze(
     if not api_key or api_key == "your_gemini_api_key_here":
         logger.warning("GOOGLE_API_KEY not set — returning demo Gemini report.")
         return _demo_gemini()
+    
+    logger.info(f"Using API Key starting with: {api_key[:5]}...")
 
     # Parse CNN context if provided
     cnn_data: dict = {}
@@ -116,7 +122,7 @@ async def gemini_analyze(
         except json.JSONDecodeError:
             pass
 
-    prompt = build_gemini_prompt(cnn_data)
+    prompt = build_gemini_prompt(cnn_data, age=age, gender=gender, localization=localization)
 
     try:
         from google import genai
@@ -124,7 +130,7 @@ async def gemini_analyze(
 
         client = genai.Client(api_key=api_key)
         response = client.models.generate_content(
-            model="gemini-3.1-pro",
+            model="gemini-3.1-flash-lite-preview",
             contents=[
                 prompt,
             ],

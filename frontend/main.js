@@ -31,6 +31,31 @@ const changeBtn    = document.getElementById('change-btn');
 const newScanBtn   = document.getElementById('new-scan-btn');
 const clearHistory = document.getElementById('clear-history');
 
+// Metadata inputs
+const inputAge     = document.getElementById('input-age');
+const inputGender  = document.getElementById('input-gender');
+const inputLoc     = document.getElementById('input-localization');
+
+// Round age to nearest 5
+inputAge.addEventListener('change', () => {
+  if (inputAge.value === '') return;
+  const val = parseFloat(inputAge.value);
+  inputAge.value = Math.round(val / 5) * 5;
+});
+
+// Editor DOM
+let cropper = null;
+const editorModal   = document.getElementById('editor-modal');
+const editorImg     = document.getElementById('editor-img');
+const editorClose   = document.getElementById('editor-close');
+const editorCancel  = document.getElementById('editor-cancel');
+const editorApply   = document.getElementById('editor-apply');
+const adjBrightness = document.getElementById('adj-brightness');
+const adjContrast   = document.getElementById('adj-contrast');
+const adjSaturation = document.getElementById('adj-saturation');
+const btnRotate     = document.getElementById('btn-rotate');
+const btnResetAdj   = document.getElementById('btn-reset-adj');
+
 // ── Particles ────────────────────────────────────────────────
 (function spawnParticles() {
   const container = document.getElementById('particles');
@@ -99,10 +124,10 @@ snapBtn.addEventListener('click', () => {
   cameraCanvas.getContext('2d').drawImage(cameraVideo, 0, 0, w, h);
   cameraCanvas.toBlob(blob => {
     if (!blob) return;
-    currentFile = new File([blob], 'camera-capture.jpg', { type: 'image/jpeg' });
-    setPreview(URL.createObjectURL(blob));
+    const file = new File([blob], 'camera-capture.jpg', { type: 'image/jpeg' });
     stopCamera();
     switchTab('upload');
+    handleFile(file);
   }, 'image/jpeg', 0.92);
 });
 
@@ -125,9 +150,101 @@ dropZone.addEventListener('drop', e => {
 function handleFile(file) {
   if (!file) return;
   if (file.size > 10 * 1024 * 1024) { alert('Image must be under 10 MB.'); return; }
-  currentFile = file;
-  setPreview(URL.createObjectURL(file));
+  openEditor(file);
 }
+
+// ── Image Editor Logic ────────────────────────────────────────
+function openEditor(file) {
+  const url = URL.createObjectURL(file);
+  editorImg.src = url;
+  editorModal.classList.remove('hidden');
+
+  if (cropper) cropper.destroy();
+  
+  resetAdjustments();
+
+  cropper = new Cropper(editorImg, {
+    aspectRatio: 4/3, // HAM10000 images are 4:3
+    viewMode: 1,
+    autoCropArea: 1,
+    background: false,
+    ready() {
+      applyAdjustments();
+    }
+  });
+}
+
+function resetAdjustments() {
+  adjBrightness.value = 100;
+  adjContrast.value = 100;
+  adjSaturation.value = 100;
+  applyAdjustments();
+}
+
+function applyAdjustments() {
+  if (!cropper) return;
+  const b = adjBrightness.value;
+  const c = adjContrast.value;
+  const s = adjSaturation.value;
+  // Apply CSS filters to the cropper container for real-time preview
+  const container = document.querySelector('.cropper-container .cropper-view-box img');
+  const canvas = document.querySelector('.cropper-container .cropper-canvas img');
+  const filter = `brightness(${b}%) contrast(${c}%) saturate(${s}%)`;
+  if (container) container.style.filter = filter;
+  if (canvas) canvas.style.filter = filter;
+}
+
+[adjBrightness, adjContrast, adjSaturation].forEach(el => {
+  el.addEventListener('input', applyAdjustments);
+});
+
+btnRotate.addEventListener('click', () => {
+  if (cropper) cropper.rotate(90);
+});
+
+btnResetAdj.addEventListener('click', resetAdjustments);
+
+editorCancel.addEventListener('click', closeEditor);
+editorClose.addEventListener('click', closeEditor);
+
+function closeEditor() {
+  editorModal.classList.add('hidden');
+  if (cropper) {
+    cropper.destroy();
+    cropper = null;
+  }
+}
+
+editorApply.addEventListener('click', () => {
+  if (!cropper) return;
+
+  const canvas = cropper.getCroppedCanvas({
+    maxWidth: 1024,
+    maxHeight: 1024,
+    imageSmoothingQuality: 'high'
+  });
+
+  // Apply adjustments to the final canvas
+  const ctx = canvas.getContext('2d');
+  const b = adjBrightness.value;
+  const c = adjContrast.value;
+  const s = adjSaturation.value;
+  
+  // Create a temporary canvas to apply filters
+  const tempCanvas = document.createElement('canvas');
+  tempCanvas.width = canvas.width;
+  tempCanvas.height = canvas.height;
+  const tCtx = tempCanvas.getContext('2d');
+  
+  tCtx.filter = `brightness(${b}%) contrast(${c}%) saturate(${s}%)`;
+  tCtx.drawImage(canvas, 0, 0);
+
+  tempCanvas.toBlob(blob => {
+    currentFile = new File([blob], 'processed-skin.jpg', { type: 'image/jpeg' });
+    setPreview(URL.createObjectURL(blob));
+    closeEditor();
+  }, 'image/jpeg', 0.9);
+});
 
 function setPreview(url) {
   previewImg.src = url;
@@ -142,6 +259,10 @@ function resetUpload() {
   previewSec.classList.add('hidden');
   analyzeBtn.disabled = true;
   resultsSection.classList.add('hidden');
+  // Reset sliders
+  adjBrightness.value = 100;
+  adjContrast.value = 100;
+  adjSaturation.value = 100;
 }
 
 // ── Analyze ──────────────────────────────────────────────────
@@ -179,10 +300,15 @@ async function runAnalysis() {
 
 // ── API calls ────────────────────────────────────────────────
 async function fetchCNN(file) {
-  if (!backendOnline) return null; // will use demo
+  if (!backendOnline) return null;
   try {
     const fd = new FormData();
     fd.append('file', file);
+    // Optional metadata
+    if (inputAge.value) fd.append('age', inputAge.value);
+    if (inputGender.value) fd.append('gender', inputGender.value);
+    if (inputLoc.value) fd.append('localization', inputLoc.value);
+
     const r = await fetch(`${API}/predict`, { method: 'POST', body: fd });
     return await r.json();
   } catch { return null; }
@@ -193,6 +319,12 @@ async function fetchGemini(cnnData = null) {
   try {
     const fd = new FormData();
     if (cnnData) fd.append('cnn_result', JSON.stringify(cnnData));
+    
+    // Metadata for Gemini
+    if (inputAge.value) fd.append('age', inputAge.value);
+    if (inputGender.value) fd.append('gender', inputGender.value);
+    if (inputLoc.value) fd.append('localization', inputLoc.value);
+
     const r = await fetch(`${API}/gemini-analyze`, { method: 'POST', body: fd });
     return await r.json();
   } catch { return null; }
