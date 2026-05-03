@@ -165,18 +165,16 @@ CONDITION_METADATA = {
 
 def preprocess_image(file_bytes: bytes) -> np.ndarray:
     """
-    Preprocess raw image bytes for EfficientNetB0 inference.
+    Preprocess raw image bytes for MobileNetV2 inference.
     Returns float32 array of shape (1, 224, 224, 3).
-    EfficientNetB0 expects pixel values in [-1, 1] for some versions, 
-    but [0, 1] is standard for most Keras implementations.
+    MobileNetV2 expects pixel values in [-1, 1].
     """
     img = Image.open(io.BytesIO(file_bytes)).convert("RGB")
     img = img.resize(IMG_SIZE, Image.LANCZOS)
     arr = np.array(img, dtype=np.float32)
-    # EfficientNetB0 normalization
-    # If using tf.keras.applications.efficientnet.preprocess_input, it depends on the mode.
-    # We'll use [0, 1] scaling as used in the new notebook.
-    arr = arr / 255.0  
+    # MobileNetV2 scaling: [0, 255] -> [-1, 1]
+    # Matches Rescaling(1./127.5, offset=-1) from training notebook
+    arr = (arr / 127.5) - 1.0
     return np.expand_dims(arr, axis=0)  # (1, 224, 224, 3)
 
 
@@ -217,25 +215,44 @@ def postprocess_prediction(raw_probs: np.ndarray, top_n: int = 3) -> dict:
 
 # ─── Gemini Prompt Builder ────────────────────────────────────────────────────
 
-def build_gemini_prompt(cnn_data: dict, age: str = "", gender: str = "", localization: str = "") -> str:
-    """Build a structured prompt for Gemini analysis with patient context."""
+def build_gemini_prompt(cnn_data: dict, metadata: dict = None) -> str:
+    """Build a structured prompt for Gemini analysis with SCIN-aligned clinical context."""
+    if metadata is None:
+        metadata = {}
+
     patient_context = ""
-    if age or gender or localization:
-        parts = []
-        if age: parts.append(f"Age: {age}")
-        if gender: parts.append(f"Sex: {gender}")
-        if localization: parts.append(f"Location: {localization}")
-        patient_context = f"\n\nPatient Details: {', '.join(parts)}"
+    context_parts = []
+    
+    # Demographics
+    if metadata.get("age"): context_parts.append(f"Age: {metadata['age']}")
+    if metadata.get("gender"): context_parts.append(f"Sex: {metadata['gender']}")
+    if metadata.get("skin_type"): context_parts.append(f"Fitzpatrick Skin Type: {metadata['skin_type']}")
+    
+    # Clinical history
+    if metadata.get("localization"): context_parts.append(f"Location: {metadata['localization']}")
+    if metadata.get("duration"): context_parts.append(f"Duration: {metadata['duration']}")
+    
+    # Symptoms / Texture
+    symptoms = []
+    if metadata.get("is_itchy") == "true": symptoms.append("itchy")
+    if metadata.get("is_painful") == "true": symptoms.append("painful")
+    if metadata.get("is_raised") == "true": symptoms.append("raised/bumpy")
+    
+    if symptoms:
+        context_parts.append(f"Symptoms/Texture: {', '.join(symptoms)}")
+
+    if context_parts:
+        patient_context = "\n\nPatient Clinical Context: " + ", ".join(context_parts)
 
     cnn_hint = ""
     if cnn_data.get("condition"):
         prob_pct = round(cnn_data.get("confidence", 0) * 100)
         cnn_hint = (
-            f"\n\nContext: Our specialized dermatology CNN classified the patient's skin condition as "
+            f"\n\nContext: Our specialized dermatology CNN (MobileNetV2 trained on SCIN) classified this as "
             f"'{cnn_data['condition']}' with {prob_pct}% confidence. "
             f"The underlying model prediction code is '{cnn_data.get('code', 'unknown')}'. "
             f"The severity is considered '{cnn_data.get('severity_label', 'Unknown')}'. "
-            f"Model description: {cnn_data.get('description', '')}"
+            f"Clinical reference: {cnn_data.get('description', '')}"
         )
 
     return f"""You are an expert dermatology AI assistant. Provide a patient-friendly explanation based ONLY on the CNN diagnosis and patient context provided below. Respond with ONLY a valid JSON object — no markdown, no preamble, no trailing text.{patient_context}{cnn_hint}

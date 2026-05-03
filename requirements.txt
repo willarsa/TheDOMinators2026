@@ -1,6 +1,8 @@
 fastapi
 uvicorn[standard]
-tensorflow>=2.15
+tensorflow>=2.16.0
+keras>=3.12.0
+protobuf>=5.26.0
 pillow
 numpy
 python-multipart

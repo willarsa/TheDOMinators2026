@@ -32,9 +32,14 @@ const newScanBtn   = document.getElementById('new-scan-btn');
 const clearHistory = document.getElementById('clear-history');
 
 // Metadata inputs
-const inputAge     = document.getElementById('input-age');
-const inputGender  = document.getElementById('input-gender');
-const inputLoc     = document.getElementById('input-localization');
+const inputAge      = document.getElementById('input-age');
+const inputGender   = document.getElementById('input-gender');
+const inputSkinType = document.getElementById('input-skin-type');
+const inputLoc      = document.getElementById('input-localization');
+const inputDuration = document.getElementById('input-duration');
+const inputItchy    = document.getElementById('input-itchy');
+const inputPainful  = document.getElementById('input-painful');
+const inputRaised   = document.getElementById('input-raised');
 
 // Round age to nearest 5
 inputAge.addEventListener('change', () => {
@@ -80,12 +85,14 @@ async function checkBackend() {
     const data = await r.json();
     backendOnline = r.ok;
     if (!backendOnline || data.demo_mode) showDemoNotice();
+    else hideDemoNotice();
   } catch {
     backendOnline = false;
     showDemoNotice();
   }
 }
 function showDemoNotice() { demoNotice.classList.remove('hidden'); }
+function hideDemoNotice() { demoNotice.classList.add('hidden'); }
 
 // ── Tab switching ────────────────────────────────────────────
 tabUpload.addEventListener('click', () => switchTab('upload'));
@@ -259,10 +266,18 @@ function resetUpload() {
   previewSec.classList.add('hidden');
   analyzeBtn.disabled = true;
   resultsSection.classList.add('hidden');
-  // Reset sliders
+  // Reset inputs
   adjBrightness.value = 100;
   adjContrast.value = 100;
   adjSaturation.value = 100;
+  inputAge.value = '';
+  inputGender.value = '';
+  inputSkinType.value = '';
+  inputLoc.value = '';
+  inputDuration.value = '';
+  inputItchy.checked = false;
+  inputPainful.checked = false;
+  inputRaised.checked = false;
 }
 
 // ── Analyze ──────────────────────────────────────────────────
@@ -307,7 +322,12 @@ async function fetchCNN(file) {
     // Optional metadata
     if (inputAge.value) fd.append('age', inputAge.value);
     if (inputGender.value) fd.append('gender', inputGender.value);
+    if (inputSkinType.value) fd.append('skin_type', inputSkinType.value);
     if (inputLoc.value) fd.append('localization', inputLoc.value);
+    if (inputDuration.value) fd.append('duration', inputDuration.value);
+    fd.append('is_itchy', inputItchy.checked);
+    fd.append('is_painful', inputPainful.checked);
+    fd.append('is_raised', inputRaised.checked);
 
     const r = await fetch(`${API}/predict`, { method: 'POST', body: fd });
     return await r.json();
@@ -323,7 +343,12 @@ async function fetchGemini(cnnData = null) {
     // Metadata for Gemini
     if (inputAge.value) fd.append('age', inputAge.value);
     if (inputGender.value) fd.append('gender', inputGender.value);
+    if (inputSkinType.value) fd.append('skin_type', inputSkinType.value);
     if (inputLoc.value) fd.append('localization', inputLoc.value);
+    if (inputDuration.value) fd.append('duration', inputDuration.value);
+    fd.append('is_itchy', inputItchy.checked);
+    fd.append('is_painful', inputPainful.checked);
+    fd.append('is_raised', inputRaised.checked);
 
     const r = await fetch(`${API}/gemini-analyze`, { method: 'POST', body: fd });
     return await r.json();
@@ -476,15 +501,15 @@ clearHistory.addEventListener('click', () => {
 
 // ── Demo data ─────────────────────────────────────────────────
 const DEMO_CNN = {
-  condition: 'Acne', common_name: 'Pimples / Acne', code: 'Acne',
-  confidence: 0.9245, severity: 'low', severity_label: 'Low Risk',
+  condition: 'Eczema', common_name: 'Atopic Dermatitis', code: 'Eczema',
+  confidence: 0.8924, severity: 'medium', severity_label: 'Moderate Risk',
   seek_doctor: false,
-  description: 'Acne is a common skin condition where pores become clogged with oil and dead skin cells. It usually presents as blackheads, whiteheads, or pimples.',
-  color: 'emerald',
+  description: 'Eczema is a condition that makes your skin red and itchy. It is extremely common and often chronic, requiring consistent moisturizing and management.',
+  color: 'amber',
   top3: [
-    { code: 'Acne',        label: 'Acne',        probability: 0.9245 },
-    { code: 'Folliculitis', label: 'Folliculitis', probability: 0.0431 },
-    { code: 'Healthy Skin', label: 'Healthy Skin', probability: 0.0124 },
+    { code: 'Eczema',    label: 'Eczema',    probability: 0.8924 },
+    { code: 'Psoriasis', label: 'Psoriasis', probability: 0.0612 },
+    { code: 'Tinea',     label: 'Tinea',     probability: 0.0214 },
   ],
   _demo: true
 };

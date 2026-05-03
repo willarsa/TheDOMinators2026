@@ -101,20 +101,33 @@ async def gemini_analyze(
     cnn_result: str = Form(default=""),
     age: str = Form(default=""),
     gender: str = Form(default=""),
+    skin_type: str = Form(default=""),
     localization: str = Form(default=""),
+    duration: str = Form(default=""),
+    is_itchy: str = Form(default="false"),
+    is_painful: str = Form(default="false"),
+    is_raised: str = Form(default="false"),
 ):
     """
     Send the CNN results to Gemini 2.0 Flash for a rich, natural-language
-    dermatology report including care tips and urgency assessment.
+    report including care tips and urgency assessment.
     """
     api_key = os.getenv("GOOGLE_API_KEY", "")
     if not api_key or api_key == "your_gemini_api_key_here":
         logger.warning("GOOGLE_API_KEY not set — returning demo Gemini report.")
         return _demo_gemini()
     
-    logger.info(f"Using API Key starting with: {api_key[:5]}...")
+    metadata = {
+        "age": age,
+        "gender": gender,
+        "skin_type": skin_type,
+        "localization": localization,
+        "duration": duration,
+        "is_itchy": is_itchy,
+        "is_painful": is_painful,
+        "is_raised": is_raised,
+    }
 
-    # Parse CNN context if provided
     cnn_data: dict = {}
     if cnn_result:
         try:
@@ -122,7 +135,7 @@ async def gemini_analyze(
         except json.JSONDecodeError:
             pass
 
-    prompt = build_gemini_prompt(cnn_data, age=age, gender=gender, localization=localization)
+    prompt = build_gemini_prompt(cnn_data, metadata=metadata)
 
     try:
         from google import genai
@@ -157,25 +170,24 @@ def _parse_gemini_response(text: str) -> dict:
 
 
 def _demo_predict() -> dict:
-    """Realistic mock CNN response for demo / no-model mode."""
+    """Realistic mock CNN response for demo / no-model mode using SCIN classes."""
     return {
-        "condition": "Melanocytic Nevi",
-        "common_name": "Common Mole",
-        "code": "nv",
-        "confidence": 0.8712,
-        "severity": "low",
-        "severity_label": "Low Risk",
+        "condition": "Eczema",
+        "common_name": "Atopic Dermatitis",
+        "code": "Eczema",
+        "confidence": 0.8924,
+        "severity": "medium",
+        "severity_label": "Moderate Risk",
         "seek_doctor": False,
         "description": (
-            "Melanocytic nevi are common benign moles formed by clusters of "
-            "pigment-producing melanocytes. They are typically harmless but "
-            "should be monitored for changes in size, shape, or color."
+            "Eczema is a condition that makes your skin red and itchy. It's common "
+            "in children but can occur at any age. It's long-lasting and tends to flare up."
         ),
-        "color": "emerald",
+        "color": "amber",
         "top3": [
-            {"code": "nv",  "label": "Melanocytic Nevi",  "probability": 0.8712},
-            {"code": "bkl", "label": "Benign Keratosis",  "probability": 0.0831},
-            {"code": "df",  "label": "Dermatofibroma",    "probability": 0.0314},
+            {"code": "Eczema",  "label": "Eczema",  "probability": 0.8924},
+            {"code": "Psoriasis", "label": "Psoriasis",  "probability": 0.0612},
+            {"code": "Tinea",  "label": "Tinea",    "probability": 0.0214},
         ],
         "_demo": True,
     }

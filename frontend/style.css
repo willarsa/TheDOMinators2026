@@ -165,6 +165,21 @@ section { position: relative; z-index: 1; max-width: 1100px;
   border-radius: 8px; padding: 10px; color: var(--text); font-size: 0.9rem; transition: all .2s; width: 100%; }
 .input-group input:focus, .input-group select:focus { border-color: var(--teal); outline: none; background: rgba(45,212,191,0.03); }
 
+/* ── Custom Checkboxes ─────────────────────────────── */
+.checkbox-row { display: flex; gap: 16px; margin-top: 4px; flex-wrap: wrap; }
+.cb-label { display: flex; align-items: center; gap: 10px; cursor: pointer;
+  font-size: 0.88rem; color: var(--text2); transition: color .2s; }
+.cb-label:hover { color: var(--text); }
+.cb-label input[type="checkbox"] { appearance: none; -webkit-appearance: none;
+  width: 18px; height: 18px; border: 1px solid var(--border); border-radius: 4px;
+  background: var(--bg3); cursor: pointer; position: relative; transition: all .2s; }
+.cb-label input[type="checkbox"]:checked { background: var(--teal); border-color: var(--teal);
+  box-shadow: 0 0 10px var(--teal-glow); }
+.cb-label input[type="checkbox"]:checked::after { content: '✓'; position: absolute;
+  top: 50%; left: 50%; transform: translate(-50%, -50%); color: #050b18;
+  font-size: 12px; font-weight: 800; }
+.cb-label input[type="checkbox"]:focus { border-color: var(--teal); outline: none; }
+
 /* ── Demo notice ────────────────────────────────────── */
 .demo-notice { display: flex; align-items: center; gap: 10px; margin: 16px auto 0;
   max-width: 520px; padding: 12px 16px; border-radius: var(--r);
