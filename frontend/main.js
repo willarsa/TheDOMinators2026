@@ -4,7 +4,9 @@
             results rendering, and scan history.
    ============================================================ */
 
-const API = 'http://localhost:8000';
+//const API = 'http://localhost:8000';
+const API_BASE = 'https://thedominators2026.onrender.com';
+
 let currentFile = null;
 let cameraStream = null;
 let backendOnline = false;
@@ -81,7 +83,7 @@ const btnResetAdj   = document.getElementById('btn-reset-adj');
 // ── Backend health check ──────────────────────────────────────
 async function checkBackend() {
   try {
-    const r = await fetch(`${API}/health`, { signal: AbortSignal.timeout(2000) });
+    const r = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(2000) });
     const data = await r.json();
     backendOnline = r.ok;
     if (!backendOnline || data.demo_mode) showDemoNotice();
@@ -329,7 +331,7 @@ async function fetchCNN(file) {
     fd.append('is_painful', inputPainful.checked);
     fd.append('is_raised', inputRaised.checked);
 
-    const r = await fetch(`${API}/predict`, { method: 'POST', body: fd });
+    const r = await fetch(`${API_BASE}/predict`, { method: 'POST', body: fd });
     return await r.json();
   } catch { return null; }
 }
@@ -350,7 +352,7 @@ async function fetchGemini(cnnData = null) {
     fd.append('is_painful', inputPainful.checked);
     fd.append('is_raised', inputRaised.checked);
 
-    const r = await fetch(`${API}/gemini-analyze`, { method: 'POST', body: fd });
+    const r = await fetch(`${API_BASE}/gemini-analyze`, { method: 'POST', body: fd });
     return await r.json();
   } catch { return null; }
 }
