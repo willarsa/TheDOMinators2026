@@ -97,20 +97,16 @@ async def predict(file: UploadFile = File(...)):
 
 @app.post("/gemini-analyze", tags=["gemini"])
 async def gemini_analyze(
-    file: UploadFile = File(...),
     cnn_result: str = Form(default=""),
 ):
     """
-    Send the skin image to Gemini 2.0 Flash for a rich, natural-language
+    Send the CNN results to Gemini 2.0 Flash for a rich, natural-language
     dermatology report including care tips and urgency assessment.
     """
     api_key = os.getenv("GOOGLE_API_KEY", "")
     if not api_key or api_key == "your_gemini_api_key_here":
         logger.warning("GOOGLE_API_KEY not set — returning demo Gemini report.")
         return _demo_gemini()
-
-    img_bytes = await file.read()
-    content_type = file.content_type or "image/jpeg"
 
     # Parse CNN context if provided
     cnn_data: dict = {}
@@ -128,9 +124,8 @@ async def gemini_analyze(
 
         client = genai.Client(api_key=api_key)
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-3.1-pro",
             contents=[
-                types.Part.from_bytes(data=img_bytes, mime_type=content_type),
                 prompt,
             ],
         )

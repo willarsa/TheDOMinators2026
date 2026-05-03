@@ -161,14 +161,14 @@ async function runAnalysis() {
   resultsSection.classList.remove('hidden');
   resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-  // Run CNN and Gemini in parallel
-  const [cnnResult, geminiResult] = await Promise.all([
-    fetchCNN(currentFile),
-    fetchGemini(currentFile)
-  ]);
-
+  // Run CNN first
+  const cnnResult = await fetchCNN(currentFile);
   renderCNN(cnnResult);
-  renderGemini(geminiResult, cnnResult);
+
+  // Then run Gemini with the CNN results
+  const geminiResult = await fetchGemini(cnnResult);
+  renderGemini(geminiResult);
+
   saveToHistory(currentFile, cnnResult);
   renderHistory();
 
@@ -188,11 +188,10 @@ async function fetchCNN(file) {
   } catch { return null; }
 }
 
-async function fetchGemini(file, cnnData = null) {
+async function fetchGemini(cnnData = null) {
   if (!backendOnline) return null;
   try {
     const fd = new FormData();
-    fd.append('file', file);
     if (cnnData) fd.append('cnn_result', JSON.stringify(cnnData));
     const r = await fetch(`${API}/gemini-analyze`, { method: 'POST', body: fd });
     return await r.json();

@@ -168,22 +168,24 @@ def postprocess_prediction(raw_probs: np.ndarray, top_n: int = 3) -> dict:
 # ─── Gemini Prompt Builder ────────────────────────────────────────────────────
 
 def build_gemini_prompt(cnn_data: dict) -> str:
-    """Build a structured prompt for Gemini 2.0 Flash multimodal analysis."""
+    """Build a structured prompt for Gemini analysis without an image."""
     cnn_hint = ""
     if cnn_data.get("condition"):
         prob_pct = round(cnn_data.get("confidence", 0) * 100)
         cnn_hint = (
-            f"\n\nContext: Our specialized dermatology CNN classified this as "
-            f"'{cnn_data['condition']}' with {prob_pct}% confidence. Use this as "
-            f"reference, but apply your own independent visual analysis."
+            f"\n\nContext: Our specialized dermatology CNN classified the patient's skin condition as "
+            f"'{cnn_data['condition']}' with {prob_pct}% confidence. "
+            f"The underlying model prediction code is '{cnn_data.get('code', 'unknown')}'. "
+            f"The severity is considered '{cnn_data.get('severity_label', 'Unknown')}'. "
+            f"Model description: {cnn_data.get('description', '')}"
         )
 
-    return f"""You are an expert dermatology AI assistant. Analyze the skin image and respond with ONLY a valid JSON object — no markdown, no preamble, no trailing text.{cnn_hint}
+    return f"""You are an expert dermatology AI assistant. Provide a patient-friendly explanation based ONLY on the CNN diagnosis context provided below. Respond with ONLY a valid JSON object — no markdown, no preamble, no trailing text.{cnn_hint}
 
 Return exactly this JSON structure:
 {{
-  "visual_observations": "Describe key visual features: color, texture, borders, size estimate (2-3 sentences)",
-  "likely_condition": "Most likely skin condition name",
+  "visual_observations": "Provide a brief medical description of what this condition typically looks like (2-3 sentences)",
+  "likely_condition": "Skin condition name based on the context",
   "explanation": "Plain-English explanation of what this condition is (2-3 sentences)",
   "urgency": "monitor",
   "urgency_label": "Keep an eye on it",
