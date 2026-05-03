@@ -33,7 +33,7 @@ _model = None
 async def lifespan(app: FastAPI):
     """Load the Keras model once at startup."""
     global _model
-    model_path = os.path.join(os.path.dirname(__file__), "model", "dermmylesionas")
+    model_path = os.path.join(os.path.dirname(__file__), "model", "mylesion.keras")
     if os.path.exists(model_path):
         try:
             import tensorflow as tf
