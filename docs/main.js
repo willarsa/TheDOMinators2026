@@ -300,14 +300,6 @@ async function fetchCNN(file) {
     const fd = new FormData();
     fd.append('file', file);
     // Optional metadata
-    if (inputAge.value) fd.append('age', inputAge.value);
-    if (inputGender.value) fd.append('gender', inputGender.value);
-    if (inputSkinType.value) fd.append('skin_type', inputSkinType.value);
-    if (inputLoc.value) fd.append('localization', inputLoc.value);
-    if (inputDuration.value) fd.append('duration', inputDuration.value);
-    fd.append('is_itchy', inputItchy.checked);
-    fd.append('is_painful', inputPainful.checked);
-    fd.append('is_raised', inputRaised.checked);
 
     const r = await fetch(`${API_BASE}/predict`, { method: 'POST', body: fd });
     return await r.json();
@@ -322,7 +314,6 @@ async function fetchGemini(cnnData = null) {
 
     // Metadata for Gemini
     // (Removed clinical metadata collection as model only uses image input)
-
 
     const r = await fetch(`${API_BASE}/gemini-analyze`, { method: 'POST', body: fd });
     return await r.json();
