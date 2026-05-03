@@ -6,104 +6,157 @@ from PIL import Image
 
 # ─── Constants ────────────────────────────────────────────────────────────────
 
-IMG_SIZE = (100, 75)  # Width, Height (matches training [75, 100])
+IMG_SIZE = (224, 224)  # Width, Height (matches EfficientNetB0 training)
 
-# HAM10000 classes sorted alphabetically (matches label encoder order after fit)
-CLASS_NAMES = ["akiec", "bcc", "bkl", "df", "mel", "nv", "vasc"]
+# SCIN classes sorted alphabetically
+CLASS_NAMES = [
+    "Acne",
+    "Eczema",
+    "Folliculitis",
+    "Healthy Skin",
+    "Herpes Simplex",
+    "Impetigo",
+    "Insect Bite",
+    "Psoriasis",
+    "Rosacea",
+    "Tinea",
+    "Urticaria"
+]
 
 # ─── Condition Metadata ───────────────────────────────────────────────────────
 
 CONDITION_METADATA = {
-    "akiec": {
-        "label": "Actinic Keratoses",
-        "common_name": "Actinic Keratosis",
+    "Acne": {
+        "label": "Acne",
+        "common_name": "Pimples / Acne",
+        "severity": "low",
+        "severity_label": "Low Risk",
+        "seek_doctor": False,
+        "description": (
+            "Acne is a common skin condition where pores become clogged with oil and "
+            "dead skin cells. It usually presents as blackheads, whiteheads, or pimples."
+        ),
+        "color": "emerald",
+    },
+    "Eczema": {
+        "label": "Eczema",
+        "common_name": "Atopic Dermatitis",
+        "severity": "medium",
+        "severity_label": "Moderate Risk",
+        "seek_doctor": False,
+        "description": (
+            "Eczema is a condition that makes your skin red and itchy. It's common "
+            "in children but can occur at any age. It's long-lasting and tends to flare up."
+        ),
+        "color": "amber",
+    },
+    "Folliculitis": {
+        "label": "Folliculitis",
+        "common_name": "Infected Hair Follicle",
+        "severity": "low",
+        "severity_label": "Low Risk",
+        "seek_doctor": False,
+        "description": (
+            "Folliculitis is a common skin condition in which hair follicles become "
+            "inflamed. It's usually caused by a bacterial or fungal infection."
+        ),
+        "color": "emerald",
+    },
+    "Healthy Skin": {
+        "label": "Healthy Skin",
+        "common_name": "Typical Skin",
+        "severity": "low",
+        "severity_label": "No Issue Detected",
+        "seek_doctor": False,
+        "description": (
+            "The analyzed area appears to be typical, healthy skin with no discernible "
+            "pathology detected by the AI model."
+        ),
+        "color": "emerald",
+    },
+    "Herpes Simplex": {
+        "label": "Herpes Simplex",
+        "common_name": "Cold Sores / Fever Blisters",
         "severity": "medium",
         "severity_label": "Moderate Risk",
         "seek_doctor": True,
         "description": (
-            "Actinic keratoses are rough, scaly patches on the skin caused by years "
-            "of sun exposure. They are considered precancerous and can progress to "
-            "squamous cell carcinoma if left untreated."
+            "Herpes simplex is a viral infection that causes sores. It most commonly "
+            "appears as cold sores around the mouth or as genital herpes."
         ),
         "color": "amber",
     },
-    "bcc": {
-        "label": "Basal Cell Carcinoma",
-        "common_name": "Basal Cell Carcinoma",
+    "Impetigo": {
+        "label": "Impetigo",
+        "common_name": "School Sores",
         "severity": "high",
-        "severity_label": "High Risk",
+        "severity_label": "High Risk (Contagious)",
         "seek_doctor": True,
         "description": (
-            "Basal cell carcinoma is the most common type of skin cancer. While it "
-            "rarely spreads to other parts of the body, it requires prompt medical "
-            "treatment to prevent local tissue damage."
+            "Impetigo is a highly contagious skin infection that mainly affects infants "
+            "and children. It usually appears as red sores on the face."
         ),
         "color": "red",
     },
-    "bkl": {
-        "label": "Benign Keratosis",
-        "common_name": "Benign Keratosis",
+    "Insect Bite": {
+        "label": "Insect Bite",
+        "common_name": "Bug Bite",
         "severity": "low",
         "severity_label": "Low Risk",
         "seek_doctor": False,
         "description": (
-            "Benign keratosis includes seborrheic keratoses and solar lentigines — "
-            "harmless, non-cancerous skin growths that become more common with age. "
-            "They typically do not require treatment unless cosmetically bothersome."
+            "Most insect bites and stings are minor and can be treated at home. "
+            "They usually cause a small, itchy red bump."
         ),
         "color": "emerald",
     },
-    "df": {
-        "label": "Dermatofibroma",
-        "common_name": "Dermatofibroma",
-        "severity": "low",
-        "severity_label": "Low Risk",
-        "seek_doctor": False,
-        "description": (
-            "Dermatofibromas are firm, harmless bumps that commonly appear on the "
-            "legs. They are benign fibrous nodules and rarely require treatment "
-            "unless they cause discomfort."
-        ),
-        "color": "emerald",
-    },
-    "mel": {
-        "label": "Melanoma",
-        "common_name": "Melanoma",
-        "severity": "high",
-        "severity_label": "High Risk",
+    "Psoriasis": {
+        "label": "Psoriasis",
+        "common_name": "Psoriasis",
+        "severity": "medium",
+        "severity_label": "Moderate Risk",
         "seek_doctor": True,
         "description": (
-            "Melanoma is the most serious form of skin cancer, developing in the "
-            "cells that give skin its color. Early detection is critical — please "
-            "seek professional medical evaluation immediately."
+            "Psoriasis is a skin disease that causes a rash with itchy, scaly patches, "
+            "most commonly on the knees, elbows, trunk and scalp."
         ),
-        "color": "red",
+        "color": "amber",
     },
-    "nv": {
-        "label": "Melanocytic Nevi",
-        "common_name": "Common Mole",
+    "Rosacea": {
+        "label": "Rosacea",
+        "common_name": "Rosacea",
         "severity": "low",
         "severity_label": "Low Risk",
         "seek_doctor": False,
         "description": (
-            "Melanocytic nevi are common benign moles formed by clusters of "
-            "pigment-producing melanocytes. They are typically harmless but should "
-            "be monitored for changes in size, shape, or color."
+            "Rosacea is a common skin condition that causes blushing or flushing and "
+            "visible blood vessels in your face. It may also produce small, pus-filled bumps."
         ),
         "color": "emerald",
     },
-    "vasc": {
-        "label": "Vascular Lesions",
-        "common_name": "Vascular Lesion",
-        "severity": "low",
-        "severity_label": "Low Risk",
+    "Tinea": {
+        "label": "Tinea",
+        "common_name": "Fungal Infection / Ringworm",
+        "severity": "medium",
+        "severity_label": "Moderate Risk",
+        "seek_doctor": True,
+        "description": (
+            "Tinea is the name of a group of diseases caused by a fungus. Types "
+            "include ringworm, athlete's foot and jock itch."
+        ),
+        "color": "amber",
+    },
+    "Urticaria": {
+        "label": "Urticaria",
+        "common_name": "Hives",
+        "severity": "medium",
+        "severity_label": "Moderate Risk",
         "seek_doctor": False,
         "description": (
-            "Vascular lesions include angiomas, angiokeratomas, and pyogenic "
-            "granulomas — benign growths of blood vessels in the skin. They are "
-            "usually harmless and often purely cosmetic in nature."
+            "Hives, also known as urticaria, are itchy, raised welts that are found "
+            "on the skin. They are usually red, pink, or flesh-colored."
         ),
-        "color": "emerald",
+        "color": "amber",
     },
 }
 
@@ -114,13 +167,17 @@ def preprocess_image(file_bytes: bytes) -> np.ndarray:
     """
     Preprocess raw image bytes for EfficientNetB0 inference.
     Returns float32 array of shape (1, 224, 224, 3).
-    EfficientNetB0 expects pixel values in [-1, 1].
+    EfficientNetB0 expects pixel values in [-1, 1] for some versions, 
+    but [0, 1] is standard for most Keras implementations.
     """
     img = Image.open(io.BytesIO(file_bytes)).convert("RGB")
     img = img.resize(IMG_SIZE, Image.LANCZOS)
     arr = np.array(img, dtype=np.float32)
-    arr = arr / 255.0  # Standard [0, 1] scaling
-    return np.expand_dims(arr, axis=0)  # (1, 75, 100, 3)
+    # EfficientNetB0 normalization
+    # If using tf.keras.applications.efficientnet.preprocess_input, it depends on the mode.
+    # We'll use [0, 1] scaling as used in the new notebook.
+    arr = arr / 255.0  
+    return np.expand_dims(arr, axis=0)  # (1, 224, 224, 3)
 
 
 # ─── Postprocessing ───────────────────────────────────────────────────────────
@@ -128,13 +185,6 @@ def preprocess_image(file_bytes: bytes) -> np.ndarray:
 def postprocess_prediction(raw_probs: np.ndarray, top_n: int = 3) -> dict:
     """
     Convert raw softmax probabilities into a structured prediction dict.
-
-    Args:
-        raw_probs: 1-D float array of length 7 (one per class)
-        top_n:     number of top predictions to include
-
-    Returns:
-        dict with condition metadata, confidence, severity, and top-N list
     """
     class_idx = int(np.argmax(raw_probs))
     code = CLASS_NAMES[class_idx]

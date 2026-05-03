@@ -164,7 +164,7 @@ function openEditor(file) {
   resetAdjustments();
 
   cropper = new Cropper(editorImg, {
-    aspectRatio: 4/3, // HAM10000 images are 4:3
+    aspectRatio: 1, // SCIN training uses square images
     viewMode: 1,
     autoCropArea: 1,
     background: false,
@@ -476,34 +476,34 @@ clearHistory.addEventListener('click', () => {
 
 // ── Demo data ─────────────────────────────────────────────────
 const DEMO_CNN = {
-  condition: 'Melanocytic Nevi', common_name: 'Common Mole', code: 'nv',
-  confidence: 0.8712, severity: 'low', severity_label: 'Low Risk',
+  condition: 'Acne', common_name: 'Pimples / Acne', code: 'Acne',
+  confidence: 0.9245, severity: 'low', severity_label: 'Low Risk',
   seek_doctor: false,
-  description: 'Melanocytic nevi are common benign moles formed by clusters of pigment-producing melanocytes. They are typically harmless but should be monitored for changes in size, shape, or color.',
+  description: 'Acne is a common skin condition where pores become clogged with oil and dead skin cells. It usually presents as blackheads, whiteheads, or pimples.',
   color: 'emerald',
   top3: [
-    { code: 'nv',  label: 'Melanocytic Nevi',  probability: 0.8712 },
-    { code: 'bkl', label: 'Benign Keratosis',  probability: 0.0831 },
-    { code: 'df',  label: 'Dermatofibroma',    probability: 0.0314 },
+    { code: 'Acne',        label: 'Acne',        probability: 0.9245 },
+    { code: 'Folliculitis', label: 'Folliculitis', probability: 0.0431 },
+    { code: 'Healthy Skin', label: 'Healthy Skin', probability: 0.0124 },
   ],
   _demo: true
 };
 
 const DEMO_GEMINI = {
-  visual_observations: 'The image shows a well-defined, uniformly pigmented lesion with smooth, regular borders. The coloration appears consistent throughout with no visible asymmetry or multi-tonal variation.',
-  likely_condition: 'Melanocytic Nevi (Common Mole)',
-  explanation: 'This appears to be a common benign mole — a harmless cluster of melanocytes that form a pigmented spot on the skin. Such lesions are extremely common and typically do not require treatment.',
+  visual_observations: 'The image shows several small, red inflammatory papules and a few closed comedones (whiteheads) clustered on the forehead. There is mild surrounding erythema but no deep cystic lesions.',
+  likely_condition: 'Acne Vulgaris',
+  explanation: 'This appears to be common acne, which occurs when hair follicles become plugged with oil and dead skin cells. It is a very common condition, especially during hormonal shifts or periods of high oil production.',
   urgency: 'monitor', urgency_label: 'Keep an eye on it',
-  urgency_reason: 'Lesion appears benign with regular borders, but routine monitoring is advisable.',
+  urgency_reason: 'Condition is common and currently shows only mild inflammation with no signs of severe infection.',
   care_tips: [
-    'Apply broad-spectrum SPF 30+ sunscreen daily to prevent pigmentation changes.',
-    'Photograph the area monthly to track any changes in size, shape, or color.',
-    'Avoid picking or scratching the lesion to prevent irritation.',
+    'Wash your face twice a day with a gentle, non-comedogenic cleanser.',
+    'Avoid picking or squeezing the spots, as this can lead to scarring or infection.',
+    'Consider over-the-counter treatments containing benzoyl peroxide or salicylic acid.',
   ],
   doctor_questions: [
-    'Does this show signs of the ABCDE criteria (Asymmetry, Border, Color, Diameter, Evolution)?',
-    'Should I schedule a full-body skin check given my sun exposure history?',
-    'At what point would you recommend a biopsy?',
+    'Are these breakouts related to any recent changes in my skincare routine or diet?',
+    'Would a prescription-strength retinoid be appropriate for my skin type?',
+    'How can I prevent post-inflammatory hyperpigmentation (dark spots) after these heal?',
   ],
   disclaimer: 'This AI analysis is for informational purposes only and does not constitute medical advice. Always consult a qualified healthcare professional for diagnosis and treatment.',
   _demo: true
