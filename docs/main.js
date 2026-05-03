@@ -36,6 +36,22 @@ const newScanBtn = document.getElementById('new-scan-btn');
 const clearHistory = document.getElementById('clear-history');
 
 // Metadata inputs
+const inputAge = document.getElementById('input-age');
+const inputGender = document.getElementById('input-gender');
+const inputSkinType = document.getElementById('input-skin-type');
+const inputLoc = document.getElementById('input-localization');
+const inputDuration = document.getElementById('input-duration');
+const inputItchy = document.getElementById('input-itchy');
+const inputPainful = document.getElementById('input-painful');
+const inputRaised = document.getElementById('input-raised');
+
+// Round age to nearest 5
+inputAge.addEventListener('change', () => {
+  if (inputAge.value === '') return;
+  const val = parseFloat(inputAge.value);
+  inputAge.value = Math.round(val / 5) * 5;
+});
+
 // Editor DOM
 let cropper = null;
 const editorModal = document.getElementById('editor-modal');
@@ -258,6 +274,14 @@ function resetUpload() {
   adjBrightness.value = 100;
   adjContrast.value = 100;
   adjSaturation.value = 100;
+  inputAge.value = '';
+  inputGender.value = '';
+  inputSkinType.value = '';
+  inputLoc.value = '';
+  inputDuration.value = '';
+  inputItchy.checked = false;
+  inputPainful.checked = false;
+  inputRaised.checked = false;
 }
 
 // ── Analyze ──────────────────────────────────────────────────
@@ -321,8 +345,14 @@ async function fetchGemini(cnnData = null) {
     if (cnnData) fd.append('cnn_result', JSON.stringify(cnnData));
 
     // Metadata for Gemini
-    // (Removed clinical metadata collection as model only uses image input)
-
+    if (inputAge.value) fd.append('age', inputAge.value);
+    if (inputGender.value) fd.append('gender', inputGender.value);
+    if (inputSkinType.value) fd.append('skin_type', inputSkinType.value);
+    if (inputLoc.value) fd.append('localization', inputLoc.value);
+    if (inputDuration.value) fd.append('duration', inputDuration.value);
+    fd.append('is_itchy', inputItchy.checked);
+    fd.append('is_painful', inputPainful.checked);
+    fd.append('is_raised', inputRaised.checked);
 
     const r = await fetch(`${API_BASE}/gemini-analyze`, { method: 'POST', body: fd });
     return await r.json();
