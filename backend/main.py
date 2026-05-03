@@ -99,14 +99,6 @@ async def predict(file: UploadFile = File(...)):
 @app.post("/gemini-analyze", tags=["gemini"])
 async def gemini_analyze(
     cnn_result: str = Form(default=""),
-    age: str = Form(default=""),
-    gender: str = Form(default=""),
-    skin_type: str = Form(default=""),
-    localization: str = Form(default=""),
-    duration: str = Form(default=""),
-    is_itchy: str = Form(default="false"),
-    is_painful: str = Form(default="false"),
-    is_raised: str = Form(default="false"),
 ):
     """
     Send the CNN results to Gemini 2.0 Flash for a rich, natural-language
@@ -117,17 +109,6 @@ async def gemini_analyze(
         logger.warning("GOOGLE_API_KEY not set — returning demo Gemini report.")
         return _demo_gemini()
     
-    metadata = {
-        "age": age,
-        "gender": gender,
-        "skin_type": skin_type,
-        "localization": localization,
-        "duration": duration,
-        "is_itchy": is_itchy,
-        "is_painful": is_painful,
-        "is_raised": is_raised,
-    }
-
     cnn_data: dict = {}
     if cnn_result:
         try:
@@ -135,7 +116,7 @@ async def gemini_analyze(
         except json.JSONDecodeError:
             pass
 
-    prompt = build_gemini_prompt(cnn_data, metadata=metadata)
+    prompt = build_gemini_prompt(cnn_data)
 
     try:
         from google import genai
